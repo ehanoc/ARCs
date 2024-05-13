@@ -83,11 +83,13 @@ export class ContextualCryptoApi {
      * @param isPrivate  - if true, return the private key, otherwise return the public key
      * @returns - The extended private key (kL, kR, chainCode) or the extended public key (pub, chainCode)
      */
-    async deriveKey(rootKey: Uint8Array, bip44Path: number[], isPrivate: boolean = true, derivationType: BIP32DerivationType): Promise<Uint8Array> {
+    async deriveKey(bip44Path: number[], isPrivate: boolean = true, derivationType: BIP32DerivationType): Promise<Uint8Array> {
         await ready // libsodium
 
         // Pick `g`, which is amount of bits zeroed from each derived node
         const g: number = derivationType === BIP32DerivationType.Peikert ? 9 : 32
+
+        let rootKey: Uint8Array = fromSeed(this.seed)
 
         for (let i = 0; i < bip44Path.length; i++) {
             rootKey = deriveChildNodePrivate(rootKey, bip44Path[i], g)
@@ -111,10 +113,9 @@ export class ContextualCryptoApi {
     async keyGen(context: KeyContext, account:number, keyIndex: number, derivationType: BIP32DerivationType = BIP32DerivationType.Peikert): Promise<Uint8Array> {
         await ready // libsodium
 
-        const rootKey: Uint8Array = fromSeed(this.seed)
         const bip44Path: number[] = GetBIP44PathFromContext(context, account, keyIndex)
 
-        const extendedKey: Uint8Array = await this.deriveKey(rootKey, bip44Path, false, derivationType)
+        const extendedKey: Uint8Array = await this.deriveKey(bip44Path, false, derivationType)
         return extendedKey.subarray(0, 32) // only public key
     }
 
@@ -136,8 +137,7 @@ export class ContextualCryptoApi {
     private async rawSign(bip44Path: number[], data: Uint8Array, derivationType: BIP32DerivationType): Promise<Uint8Array> {
         await ready // libsodium
 
-        const rootKey: Uint8Array = fromSeed(this.seed)
-        const raw: Uint8Array = await this.deriveKey(rootKey, bip44Path, true, derivationType)
+        const raw: Uint8Array = await this.deriveKey(bip44Path, true, derivationType)
 
         const scalar: Uint8Array = raw.slice(0, 32);
         const kR: Uint8Array = raw.slice(32, 64);
@@ -320,11 +320,9 @@ export class ContextualCryptoApi {
      */
     async ECDH(context: KeyContext, account: number, keyIndex: number, otherPartyPub: Uint8Array, meFirst: boolean, derivationType: BIP32DerivationType = BIP32DerivationType.Peikert): Promise<Uint8Array> {
         await ready
-
-        const rootKey: Uint8Array = fromSeed(this.seed)
         
         const bip44Path: number[] = GetBIP44PathFromContext(context, account, keyIndex)
-        const childKey: Uint8Array = await this.deriveKey(rootKey, bip44Path, true, derivationType)
+        const childKey: Uint8Array = await this.deriveKey(bip44Path, true, derivationType)
 
         const scalar: Uint8Array = childKey.slice(0, 32)
 

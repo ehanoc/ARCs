@@ -478,7 +478,7 @@ describe("Contextual Derivation & Signing", () => {
         it("\(OK) From m'/44'/283'/0'/0 root level (excluding address index) derive N keys with only public information", async () => {
             
             // wallet level m'/44'/283'/0'/0 root; node derivation before address_index 
-            const walletRoot: Uint8Array = await cryptoService.deriveKey(fromSeed(seed), [harden(44), harden(283), harden(0), 0], false, BIP32DerivationType.Peikert)
+            const walletRoot: Uint8Array = await cryptoService.deriveKey([harden(44), harden(283), harden(0), 0], false, BIP32DerivationType.Peikert)
 
             // should be able to derive all public keys from this root without knowing private information
             // since these are SOFTLY derived
@@ -502,7 +502,7 @@ describe("Contextual Derivation & Signing", () => {
         it("\(FAIL) From m'/44'/283'/0'/0' root level (excluding address index) should not be able to derive correct addresses from a hardened derivation", async () => {
             
             // wallet level m'/44'/283'/0'/0' root; node derivation before address_index 
-            const walletRoot: Uint8Array = await cryptoService.deriveKey(fromSeed(seed), [harden(44), harden(283), harden(0), harden(0)], false, BIP32DerivationType.Peikert)
+            const walletRoot: Uint8Array = await cryptoService.deriveKey([harden(44), harden(283), harden(0), harden(0)], false, BIP32DerivationType.Peikert)
 
 
             const numPublicKeysToDerive: number = 10
