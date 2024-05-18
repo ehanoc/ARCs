@@ -12,6 +12,7 @@ lerna-debug.log*
 
 # Dependency directories
 node_modules/
+dist/
 
 # Optional npm cache directory
 .npm
@@ -24,6 +25,7 @@ node_modules/
 .fleet
 .idea
 *.local
+yarn.lock
 
 # Editor directories and files
 .vscode/*
