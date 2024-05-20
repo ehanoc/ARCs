@@ -11,7 +11,7 @@ import * as crypto from 'crypto'
 import { readFileSync } from 'fs';
 import path from 'path';
 import Ajv, { JSONSchemaType } from 'ajv';
-import sha512 from 'js-sha512'
+import sha512, { sha512_256 } from 'js-sha512'
 import axios, { AxiosResponse } from 'axios'
 import * as util from 'util'
 
@@ -93,7 +93,7 @@ export class Arc60WalletApi {
      * Known LSIG template hashes. 
      */
     static known_lsigs_template_hashes: string[] = [
-        "866b786c4c36c22a9f2aab6bc51bdbfc81d2a645a5a1839f62b76f626f5fc9fe"
+        "e6d0d81db76b663daa0b09281dada1db564898c9f3105efe8bfc7f63ffeaf360"
     ]
 
     /**
@@ -142,6 +142,11 @@ export class Arc60WalletApi {
                 throw ERROR_FAILED_DECODING;
         }
 
+        // Reject if Program bytes prefix is present in byte array
+        if(decodedData.slice(0, 7).toString() === "Program") {
+            throw ERROR_DOESNT_MATCH_SCHEMA;
+        }
+        
         // validate against schema
         switch(metadata.scope) {
             case ScopeType.CHALLENGE32:
@@ -189,8 +194,10 @@ export class Arc60WalletApi {
                     throw ERROR_UNKNOWN_LSIG;
                 }
 
+                const lsigRequestTemplateHash: string = sha512_256(decodedData)
+
                 // check if hash is one of the known hashes
-                if(!Arc60WalletApi.known_lsigs_template_hashes.includes(hexProgramHash)) {
+                if(!Arc60WalletApi.known_lsigs_template_hashes.includes(lsigRequestTemplateHash)) {
                     throw ERROR_UNKNOWN_LSIG;
                 }
 

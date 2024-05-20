@@ -17,20 +17,22 @@ $ yarn test
 ```bash
  PASS  ./arc60wallet.api.spec.ts
   Test Suite Name
+    Reject unknown LSIGs
+      ✓ (FAILS) Tries to sign with any scope if "Program" is present (34 ms)
     SCOPE == CHALLENGE32
-      ✓ (OK) Signs random 32 byte challenge (100 ms)
-      ✓ (FAILS) Tries to sign with bad size random data as CHALLENGE32 (31 ms)
+      ✓ (OK) Signs random 32 byte challenge (3 ms)
+      ✓ (FAILS) Tries to sign with bad size random data as CHALLENGE32 (1 ms)
     SCOPE == MX_RANDOM
-      ✓ (OK) Signs random 32 byte challenge with MX prefix (6 ms)
-      ✓ (FAILS) Tries to sign but no MX prefix is present (3 ms)
+      ✓ (OK) Signs random 32 byte challenge with MX prefix (2 ms)
+      ✓ (FAILS) Tries to sign but no MX prefix is present (1 ms)
     SCOPE == INVALID
-      ✓ (FAILS) Tries to sign with invalid scope (4 ms)
+      ✓ (FAILS) Tries to sign with invalid scope (1 ms)
+    SCOPE == LSIG_TEMPLATE
+      ✓ (FAIL) Fails to sign LSIG_TEMPLATE program, templated program doesnt match known hashes (74 ms)
+      ✓ (OK) Signs LSIG_TEMPLATE program, templated program is known, values replaced and signature produced (1026 ms)
 
 Test Suites: 1 passed, 1 total
-Tests:       5 passed, 5 total
+Tests:       8 passed, 8 total
 Snapshots:   0 total
-Time:        3.307 s, estimated 6 s
-Ran all test suites.
-Done in 3.90s.
-
+Time:        3.001 s, estimated 4 s
 ```

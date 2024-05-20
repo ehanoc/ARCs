@@ -1,6 +1,7 @@
 import { randomBytes } from "crypto"
 import { Arc60WalletApi, ERROR_DOESNT_MATCH_SCHEMA, ERROR_INVALID_SCOPE, ERROR_UNKNOWN_LSIG, ScopeType, StdSigData } from "./arc60wallet.api"
 import { crypto_sign_verify_detached, ready } from "libsodium-wrappers-sumo"
+import { sha512_256 } from "js-sha512"
 
 describe('Test Suite Name', () => {
 
@@ -10,6 +11,21 @@ describe('Test Suite Name', () => {
     beforeEach(() => {
         seed = new Uint8Array(Buffer.from("b12e7cb8127d8fd07b03893f1aaa743bb737cff749ebac7f9af62b376f4494cc", 'hex'))
         arc60wallet = new Arc60WalletApi(seed);
+    })
+
+    // Reject any scope if "Program" is part of payload
+    describe('Reject unknown LSIGs', () => {
+        it('\(FAILS) Tries to sign with any scope if "Program" is present', async () => {
+            const challenge: Uint8Array = new Uint8Array(randomBytes(32))
+            const publicKey: Uint8Array = await Arc60WalletApi.getPublicKey(seed)
+
+            const signData: StdSigData = {
+                data: Buffer.concat([Buffer.from("Program"), challenge]).toString('base64'),
+                signer: publicKey
+            }
+
+            expect(arc60wallet.signData(signData, {scope: ScopeType.CHALLENGE32, encoding: 'base64'})).rejects.toThrow(ERROR_DOESNT_MATCH_SCHEMA)
+        })
     })
     
     // describe group for CHALLENGE32
@@ -169,6 +185,10 @@ describe('Test Suite Name', () => {
                 program: "I3ByYWdtYSB2ZXJzaW9uIDkKCi8vIFZlcmlmeSB0aGlzIGlzIGEgcGF5bWVudAp0eG4gVHlwZUVudW0KaW50IHBheQo9PQoKLy8gVmVyaWZ5IHRoaXMgaXMgbm90IHJla2V5aW5nIHRoZSBzZW5kZXIgYWRkcmVzcwp0eG4gUmVrZXlUbwpnbG9iYWwgWmVyb0FkZHJlc3MKPT0KYXNzZXJ0CgovLyBWZXJpZnkgdGhlIHNlbmRlcidzIGFjY291bnQgaXMgbm90IGJlaW5nIGNsb3NlZAp0eG4gQ2xvc2VSZW1haW5kZXJUbwpnbG9iYWwgWmVyb0FkZHJlc3MKPT0KYXNzZXJ0CgovLyBWZXJpZnkgdGhlIHJlY2VpdmVyIGlzIGVxdWFsIHRvIHRoZSB0ZW1wbGF0ZWQgcmVjZWl2ZXIgYWRkcmVzcwp0eG4gUmVjZWl2ZXIKYWRkciBUTVBMX1JFQ0VJVkVSCj09CmFzc2VydAoKLy8gVmVyaWZ5IHRoZSBhbW91bnQgaXMgZXF1YWwgdG8gdGhlIHRlbXBsYXRlZCBhbW91bnQKdHhuIEFtb3VudAppbnQgVE1QTF9BTU9VTlQKPT0KYXNzZXJ0CgovLyBWZXJpZnkgdGhlIGN1cnJlbnQgcm91bmQgaXMgd2l0aGluIDUwMCByb3VuZHMgb2YgYSBwcm9kdWN0IG9mIDI1XzAwMApnbG9iYWwgUm91bmQKaW50IDI1XzAwMAolCnN0b3JlIDAKCmxvYWQgMAppbnQgNTAwCjw9Cgpsb2FkIDAKaW50IDI0XzUwMAo+PQoKfHwKYXNzZXJ0CgovLyBWZXJpZnkgbGVhc2UgCnR4biBMZWFzZQpieXRlICJzY2hlZHVsZWQgMjVfMDAwIHBheW1lbnQiCnNoYTI1Ngo9PQo=",
                 hash: "866b786c4c36c22a9f2aab6bc51bdbfc81d2a645a5a1839f62b76f626f5fc9fe"
             }
+
+            // sha512_256 lSigRequest hash
+            const lSigRequestHash: string = sha512_256(Buffer.from(JSON.stringify(lSigRequest), 'utf-8'))
+            console.log("lSigRequestHash: ", lSigRequestHash)
 
             const publicKey: Uint8Array = await Arc60WalletApi.getPublicKey(seed)
 
