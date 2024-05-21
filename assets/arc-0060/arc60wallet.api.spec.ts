@@ -12,7 +12,7 @@ describe('ARC60 TEST SUITE', () => {
         arc60wallet = new Arc60WalletApi(seed);
     })
 
-
+    // describe group for rawSign
     describe('rawSign', () => {
         it('should sign data correctly', async () => {
             const data = new Uint8Array(32).fill(2);
