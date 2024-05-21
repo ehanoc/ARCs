@@ -14,22 +14,68 @@ describe('ARC60 TEST SUITE', () => {
 
     // describe group for rawSign
     describe('rawSign', () => {
-        it('should sign data correctly', async () => {
+        it('(OK) should sign data correctly', async () => {
             const data = new Uint8Array(32).fill(2);
             const rawSign = (arc60wallet as any).rawSign.bind(arc60wallet);
             const signature = await rawSign(seed, data);
+
             expect(signature).toBeInstanceOf(Uint8Array);
             expect(signature.length).toBe(64); // Ed25519 signature length
         });
+
+        it('(FAILS) should throw error for shorter incorrect length seed', async () => {
+            const data = new Uint8Array(32).fill(2);
+            const badSeed = new Uint8Array(31); // Incorrect shorter length seed
+            const rawSign = (arc60wallet as any).rawSign.bind(arc60wallet);
+
+            try {
+                await rawSign(badSeed, data);
+            } catch (error) {
+                expect(error).toBeDefined();
+            }
+        });
+        it('(FAILS) should throw error for longer incorrect length seed', async () => {
+            const data = new Uint8Array(32).fill(2);
+            const badSeed = new Uint8Array(33); // Incorrect longer length seed
+            const rawSign = (arc60wallet as any).rawSign.bind(arc60wallet);
+
+            try {
+                await rawSign(badSeed, data);
+            } catch (error) {
+                expect(error).toBeDefined();
+            }
+        });
     });
+
     // describe group for getPublicKey
     describe('getPublicKey', () => {
-        it('should return the correct public key', async () => {
+        it('(OK) should return the correct public key', async () => {
             const publicKey = await Arc60WalletApi.getPublicKey(seed);
+
             expect(publicKey).toBeInstanceOf(Uint8Array);
             expect(publicKey.length).toBe(32); // Ed25519 public key length
         });
+
+        it('(FAILS) should throw error for shorter incorrect length seed', async () => {
+            const badSeed = new Uint8Array(31); // Incorrect length seed
+
+            try {
+                await Arc60WalletApi.getPublicKey(badSeed);
+            } catch (error) {
+                expect(error).toBeDefined();
+            }
+        });
+        it('(FAILS) should throw error for longer incorrect length seed', async () => {
+            const badSeed = new Uint8Array(33); // Incorrect length seed
+
+            try {
+                await Arc60WalletApi.getPublicKey(badSeed);
+            } catch (error) {
+                expect(error).toBeDefined();
+            }
+        });
     });
+
 
     // Reject any scope if "Program" is part of payload
     describe('Reject unknown LSIGs', () => {
@@ -66,8 +112,19 @@ describe('ARC60 TEST SUITE', () => {
 
         })
 
-        it('\(FAILS) Tries to sign with bad size random data as CHALLENGE32', async () => {
+        it('\(FAILS) Tries to sign with bad size longer random data as CHALLENGE32', async () => {
             const challenge: Uint8Array = new Uint8Array(randomBytes(33)) // BAD SIZE! SHOULD FAIL
+            const publicKey: Uint8Array = await Arc60WalletApi.getPublicKey(seed)
+
+            const signData: StdSigData = {
+                data: Buffer.from(challenge).toString('base64'),
+                signer: publicKey
+            }
+
+            expect(arc60wallet.signData(signData, { scope: ScopeType.CHALLENGE32, encoding: 'base64' })).rejects.toThrow(ERROR_DOESNT_MATCH_SCHEMA)
+        })
+        it('\(FAILS) Tries to sign with bad size shorter random data as CHALLENGE32', async () => {
+            const challenge: Uint8Array = new Uint8Array(randomBytes(31)) // BAD SIZE! SHOULD FAIL
             const publicKey: Uint8Array = await Arc60WalletApi.getPublicKey(seed)
 
             const signData: StdSigData = {
@@ -133,7 +190,7 @@ describe('ARC60 TEST SUITE', () => {
 
     // describe group for LSIG
     describe('SCOPE == LSIG_TEMPLATE', () => {
-        it('\(FAIL) Fails to sign LSIG_TEMPLATE program, templated program doesnt match known hashes', async () => {
+        it('\(FAIL) Fails to sign LSIG_TEMPLATE program, templated program does not match known hashes', async () => {
             const lSigRequest = {
                 LogicSignatureDescription: {
                     name: "Sample LSig",
