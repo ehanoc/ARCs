@@ -2,7 +2,7 @@ import { randomBytes } from "crypto"
 import { Arc60WalletApi, ERROR_DOESNT_MATCH_SCHEMA, ERROR_INVALID_SCOPE, ERROR_UNKNOWN_LSIG, ScopeType, StdSigData } from "./arc60wallet.api"
 import { crypto_sign_verify_detached, ready } from "libsodium-wrappers-sumo"
 
-describe('Test Suite Name', () => {
+describe('ARC60 TEST SUITE', () => {
 
     let arc60wallet: Arc60WalletApi
     let seed: Uint8Array
@@ -11,6 +11,71 @@ describe('Test Suite Name', () => {
         seed = new Uint8Array(Buffer.from("b12e7cb8127d8fd07b03893f1aaa743bb737cff749ebac7f9af62b376f4494cc", 'hex'))
         arc60wallet = new Arc60WalletApi(seed);
     })
+
+    // describe group for rawSign
+    describe('rawSign', () => {
+        it('(OK) should sign data correctly', async () => {
+            const data = new Uint8Array(32).fill(2);
+            const rawSign = (arc60wallet as any).rawSign.bind(arc60wallet);
+            const signature = await rawSign(seed, data);
+
+            expect(signature).toBeInstanceOf(Uint8Array);
+            expect(signature.length).toBe(64); // Ed25519 signature length
+        });
+
+        it('(FAILS) should throw error for shorter incorrect length seed', async () => {
+            const data = new Uint8Array(32).fill(2);
+            const badSeed = new Uint8Array(31); // Incorrect shorter length seed
+            const rawSign = (arc60wallet as any).rawSign.bind(arc60wallet);
+
+            try {
+                await rawSign(badSeed, data);
+            } catch (error) {
+                expect(error).toBeDefined();
+            }
+        });
+        it('(FAILS) should throw error for longer incorrect length seed', async () => {
+            const data = new Uint8Array(32).fill(2);
+            const badSeed = new Uint8Array(33); // Incorrect longer length seed
+            const rawSign = (arc60wallet as any).rawSign.bind(arc60wallet);
+
+            try {
+                await rawSign(badSeed, data);
+            } catch (error) {
+                expect(error).toBeDefined();
+            }
+        });
+    });
+
+    // describe group for getPublicKey
+    describe('getPublicKey', () => {
+        it('(OK) should return the correct public key', async () => {
+            const publicKey = await Arc60WalletApi.getPublicKey(seed);
+
+            expect(publicKey).toBeInstanceOf(Uint8Array);
+            expect(publicKey.length).toBe(32); // Ed25519 public key length
+        });
+
+        it('(FAILS) should throw error for shorter incorrect length seed', async () => {
+            const badSeed = new Uint8Array(31); // Incorrect length seed
+
+            try {
+                await Arc60WalletApi.getPublicKey(badSeed);
+            } catch (error) {
+                expect(error).toBeDefined();
+            }
+        });
+        it('(FAILS) should throw error for longer incorrect length seed', async () => {
+            const badSeed = new Uint8Array(33); // Incorrect length seed
+
+            try {
+                await Arc60WalletApi.getPublicKey(badSeed);
+            } catch (error) {
+                expect(error).toBeDefined();
+            }
+        });
+    });
+
 
     // Reject any scope if "Program" is part of payload
     describe('Reject unknown LSIGs', () => {
@@ -23,10 +88,10 @@ describe('Test Suite Name', () => {
                 signer: publicKey
             }
 
-            expect(arc60wallet.signData(signData, {scope: ScopeType.CHALLENGE32, encoding: 'base64'})).rejects.toThrow(ERROR_DOESNT_MATCH_SCHEMA)
+            expect(arc60wallet.signData(signData, { scope: ScopeType.CHALLENGE32, encoding: 'base64' })).rejects.toThrow(ERROR_DOESNT_MATCH_SCHEMA)
         })
     })
-    
+
     // describe group for CHALLENGE32
     describe('SCOPE == CHALLENGE32', () => {
         it('\(OK) Signs random 32 byte challenge', async () => {
@@ -38,7 +103,7 @@ describe('Test Suite Name', () => {
                 signer: publicKey
             }
 
-            const signature: Uint8Array = await arc60wallet.signData(signData, {scope: ScopeType.CHALLENGE32, encoding: 'base64'})
+            const signature: Uint8Array = await arc60wallet.signData(signData, { scope: ScopeType.CHALLENGE32, encoding: 'base64' })
             expect(signature).toBeDefined()
 
             // verify signature 
@@ -47,7 +112,7 @@ describe('Test Suite Name', () => {
 
         })
 
-        it('\(FAILS) Tries to sign with bad size random data as CHALLENGE32', async () => {
+        it('\(FAILS) Tries to sign with bad size longer random data as CHALLENGE32', async () => {
             const challenge: Uint8Array = new Uint8Array(randomBytes(33)) // BAD SIZE! SHOULD FAIL
             const publicKey: Uint8Array = await Arc60WalletApi.getPublicKey(seed)
 
@@ -56,7 +121,18 @@ describe('Test Suite Name', () => {
                 signer: publicKey
             }
 
-            expect(arc60wallet.signData(signData, {scope: ScopeType.CHALLENGE32, encoding: 'base64'})).rejects.toThrow(ERROR_DOESNT_MATCH_SCHEMA)
+            expect(arc60wallet.signData(signData, { scope: ScopeType.CHALLENGE32, encoding: 'base64' })).rejects.toThrow(ERROR_DOESNT_MATCH_SCHEMA)
+        })
+        it('\(FAILS) Tries to sign with bad size shorter random data as CHALLENGE32', async () => {
+            const challenge: Uint8Array = new Uint8Array(randomBytes(31)) // BAD SIZE! SHOULD FAIL
+            const publicKey: Uint8Array = await Arc60WalletApi.getPublicKey(seed)
+
+            const signData: StdSigData = {
+                data: Buffer.from(challenge).toString('base64'),
+                signer: publicKey
+            }
+
+            expect(arc60wallet.signData(signData, { scope: ScopeType.CHALLENGE32, encoding: 'base64' })).rejects.toThrow(ERROR_DOESNT_MATCH_SCHEMA)
         })
     })
 
@@ -75,7 +151,7 @@ describe('Test Suite Name', () => {
                 signer: publicKey
             }
 
-            const signature: Uint8Array = await arc60wallet.signData(signData, {scope: ScopeType.MX_RANDOM, encoding: 'base64'})
+            const signature: Uint8Array = await arc60wallet.signData(signData, { scope: ScopeType.MX_RANDOM, encoding: 'base64' })
             expect(signature).toBeDefined()
 
             // verify signature 
@@ -92,7 +168,7 @@ describe('Test Suite Name', () => {
                 signer: publicKey
             }
 
-            expect(arc60wallet.signData(signData, {scope: ScopeType.MX_RANDOM, encoding: 'base64'})).rejects.toThrow(ERROR_DOESNT_MATCH_SCHEMA)
+            expect(arc60wallet.signData(signData, { scope: ScopeType.MX_RANDOM, encoding: 'base64' })).rejects.toThrow(ERROR_DOESNT_MATCH_SCHEMA)
         })
     })
 
@@ -108,13 +184,13 @@ describe('Test Suite Name', () => {
             }
 
             // bad scope
-            expect(arc60wallet.signData(signData, { scope: ScopeType.UNKNOWN, encoding: 'base64'})).rejects.toThrow(ERROR_INVALID_SCOPE)
+            expect(arc60wallet.signData(signData, { scope: ScopeType.UNKNOWN, encoding: 'base64' })).rejects.toThrow(ERROR_INVALID_SCOPE)
         })
     })
 
     // describe group for LSIG
     describe('SCOPE == LSIG_TEMPLATE', () => {
-        it('\(FAIL) Fails to sign LSIG_TEMPLATE program, templated program doesnt match known hashes', async () => {
+        it('\(FAIL) Fails to sign LSIG_TEMPLATE program, templated program does not match known hashes', async () => {
             const lSigRequest = {
                 LogicSignatureDescription: {
                     name: "Sample LSig",
@@ -133,12 +209,12 @@ describe('Test Suite Name', () => {
                             description: "This is a sample template receiver as string"
                         }
                     ],
-                    values: 
-                        {
-                            TMPL_AMOUNT: 1000000,
-                            TMPL_RECEIVER: "Y76M3MSY6DKBRHBL7C3NNDXGS5IIMQVQVUAB6MP4XEMMGVF2QWNPL226CA"
-                        }
-                    
+                    values:
+                    {
+                        TMPL_AMOUNT: 1000000,
+                        TMPL_RECEIVER: "Y76M3MSY6DKBRHBL7C3NNDXGS5IIMQVQVUAB6MP4XEMMGVF2QWNPL226CA"
+                    }
+
                 },
                 program: "badProgram",
                 hash: "866b786c4c36c22a9f2aab6bc51bdbfc81d2a645a5a1839f62b76f626f5fc9fe"
@@ -151,7 +227,7 @@ describe('Test Suite Name', () => {
                 signer: publicKey
             }
 
-            expect(arc60wallet.signData(signData, { scope: ScopeType.LSIG_TEMPLATE, encoding: 'base64'})).rejects.toThrow(ERROR_UNKNOWN_LSIG)
+            expect(arc60wallet.signData(signData, { scope: ScopeType.LSIG_TEMPLATE, encoding: 'base64' })).rejects.toThrow(ERROR_UNKNOWN_LSIG)
 
         })
 
@@ -175,12 +251,12 @@ describe('Test Suite Name', () => {
                             description: "This is a sample template receiver as string"
                         }
                     ],
-                    values: 
-                        {
-                            TMPL_AMOUNT: 1000000,
-                            TMPL_RECEIVER: "Y76M3MSY6DKBRHBL7C3NNDXGS5IIMQVQVUAB6MP4XEMMGVF2QWNPL226CA"
-                        }
-                    
+                    values:
+                    {
+                        TMPL_AMOUNT: 1000000,
+                        TMPL_RECEIVER: "Y76M3MSY6DKBRHBL7C3NNDXGS5IIMQVQVUAB6MP4XEMMGVF2QWNPL226CA"
+                    }
+
                 },
                 program: "I3ByYWdtYSB2ZXJzaW9uIDkKCi8vIFZlcmlmeSB0aGlzIGlzIGEgcGF5bWVudAp0eG4gVHlwZUVudW0KaW50IHBheQo9PQoKLy8gVmVyaWZ5IHRoaXMgaXMgbm90IHJla2V5aW5nIHRoZSBzZW5kZXIgYWRkcmVzcwp0eG4gUmVrZXlUbwpnbG9iYWwgWmVyb0FkZHJlc3MKPT0KYXNzZXJ0CgovLyBWZXJpZnkgdGhlIHNlbmRlcidzIGFjY291bnQgaXMgbm90IGJlaW5nIGNsb3NlZAp0eG4gQ2xvc2VSZW1haW5kZXJUbwpnbG9iYWwgWmVyb0FkZHJlc3MKPT0KYXNzZXJ0CgovLyBWZXJpZnkgdGhlIHJlY2VpdmVyIGlzIGVxdWFsIHRvIHRoZSB0ZW1wbGF0ZWQgcmVjZWl2ZXIgYWRkcmVzcwp0eG4gUmVjZWl2ZXIKYWRkciBUTVBMX1JFQ0VJVkVSCj09CmFzc2VydAoKLy8gVmVyaWZ5IHRoZSBhbW91bnQgaXMgZXF1YWwgdG8gdGhlIHRlbXBsYXRlZCBhbW91bnQKdHhuIEFtb3VudAppbnQgVE1QTF9BTU9VTlQKPT0KYXNzZXJ0CgovLyBWZXJpZnkgdGhlIGN1cnJlbnQgcm91bmQgaXMgd2l0aGluIDUwMCByb3VuZHMgb2YgYSBwcm9kdWN0IG9mIDI1XzAwMApnbG9iYWwgUm91bmQKaW50IDI1XzAwMAolCnN0b3JlIDAKCmxvYWQgMAppbnQgNTAwCjw9Cgpsb2FkIDAKaW50IDI0XzUwMAo+PQoKfHwKYXNzZXJ0CgovLyBWZXJpZnkgbGVhc2UgCnR4biBMZWFzZQpieXRlICJzY2hlZHVsZWQgMjVfMDAwIHBheW1lbnQiCnNoYTI1Ngo9PQo=",
                 hash: "866b786c4c36c22a9f2aab6bc51bdbfc81d2a645a5a1839f62b76f626f5fc9fe"
@@ -193,7 +269,7 @@ describe('Test Suite Name', () => {
                 signer: publicKey
             }
 
-            const signature: Uint8Array = await arc60wallet.signData(signData, { scope: ScopeType.LSIG_TEMPLATE, encoding: 'base64'})
+            const signature: Uint8Array = await arc60wallet.signData(signData, { scope: ScopeType.LSIG_TEMPLATE, encoding: 'base64' })
             // expect signature to be hex
             expect(Buffer.from(signature).toString('hex')).toEqual("15ebdae08194f8d6ab64067be536f8f7538acda23474426a157433d09076f22a9211e956ff7473af40d5392285589be26c370c636e873a570d9316bd4bb74706")
         })
