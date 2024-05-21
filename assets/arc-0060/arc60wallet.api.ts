@@ -20,7 +20,6 @@ export interface ARC47LsigTemplateRequest {
         name: string,
         description: string,
         program: string, // base64 encoded TEAL program
-        hash: string, // hash of the program, AFTER values replaced and compiled
         variables: Array<{
             variable: string,
             name: string,
@@ -28,6 +27,7 @@ export interface ARC47LsigTemplateRequest {
             description: string
         }>
     },
+    hash: string, // hash of the program, AFTER values replaced and compiled
     values: { // to replace on the program
         [key: string]: any
     }
@@ -111,7 +111,7 @@ export class Arc60WalletApi {
      * Known LSIG template hashes. 
      */
     static known_lsigs_template_hashes: string[] = [
-        "1c01fbf5f82213abe542717387d982c3e8332f45d78d6b7ce40b31bb802f1778"
+        "e796a2725dc97b2ed714a7363ba950e3633be759244e99624e63a6a57cdc0db5"
     ]
 
     /**

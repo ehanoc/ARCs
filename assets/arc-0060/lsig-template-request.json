@@ -42,18 +42,17 @@
         },
         "program": {
           "type": "string"
-        },
-        "hash": {
-          "type": "string"
         }
       },
       "required": [
         "name",
         "description",
         "variables",
-        "program",
-        "hash"
+        "program"
       ]
+    },
+    "hash": {
+      "type": "string"
     },
     "values": {
       "type": "object",
@@ -71,6 +70,7 @@
   },
   "required": [
     "LogicSignatureDescription",
-    "values"
+    "values",
+    "hash"
   ]
 }
