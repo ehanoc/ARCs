@@ -83,11 +83,13 @@ describe('ARC60 TEST SUITE', () => {
     // Reject any scope if "Program" is part of payload
     describe('Reject unknown LSIGs', () => {
         it('\(FAILS) Tries to sign with any scope if "Program" is present', async () => {
-            const challenge: Uint8Array = new Uint8Array(randomBytes(32))
+            const prefix: Buffer = Buffer.from("Program")
+            const suffix: Buffer = randomBytes(32 - prefix.length)
+            const challenge: Buffer = Buffer.concat([prefix, suffix])
             const publicKey: Uint8Array = await Arc60WalletApi.getPublicKey(seed)
 
             const signData: StdSigData = {
-                data: Buffer.concat([Buffer.from("Program"), challenge]).toString('base64'),
+                data: challenge.toString('base64'),
                 signer: publicKey
             }
 
@@ -109,7 +111,7 @@ describe('ARC60 TEST SUITE', () => {
             const signature: Uint8Array = await arc60wallet.signData(signData, { scope: ScopeType.CHALLENGE32, encoding: 'base64' })
             expect(signature).toBeDefined()
 
-            // verify signature 
+            // verify signature
             await ready //libsodium
             expect(crypto_sign_verify_detached(signature, challenge, publicKey)).toBeTruthy()
 
@@ -157,7 +159,7 @@ describe('ARC60 TEST SUITE', () => {
             const signature: Uint8Array = await arc60wallet.signData(signData, { scope: ScopeType.MX_RANDOM, encoding: 'base64' })
             expect(signature).toBeDefined()
 
-            // verify signature 
+            // verify signature
             await ready //libsodium
             expect(crypto_sign_verify_detached(signature, mxRandomData, publicKey)).toBeTruthy()
         })
@@ -177,7 +179,7 @@ describe('ARC60 TEST SUITE', () => {
             const signature: Uint8Array = await arc60wallet.signData(signData, { scope: ScopeType.MX_RANDOM, encoding: 'base64' })
             expect(signature).toBeDefined()
 
-            // verify signature 
+            // verify signature
             await ready //libsodium
             expect(crypto_sign_verify_detached(signature, mxRandomData, publicKey)).toBeTruthy()
         })
@@ -328,13 +330,13 @@ describe('ARC60 TEST SUITE', () => {
             }
 
             const signature: Uint8Array = await arc60wallet.signData(signData, { scope: ScopeType.ARC31, encoding: 'base64' })
-            
+
             // verify
 
             // msgpack encode request
             const encoded: Uint8Array = msgpack.encode(arc31Message, { sortKeys: true, ignoreUndefined: true })
 
-            // verify signature 
+            // verify signature
             await ready //libsodium
             expect(crypto_sign_verify_detached(signature, encoded, publicKey)).toBeTruthy()
         })
