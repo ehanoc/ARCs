@@ -13,6 +13,7 @@ lerna-debug.log*
 # Dependency directories
 node_modules/
 dist/
+coverage/
 
 # Optional npm cache directory
 .npm

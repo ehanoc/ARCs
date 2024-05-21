@@ -1,6 +1,7 @@
 import { randomBytes } from "crypto"
-import { ARC47LsigTemplateRequest, Arc60WalletApi, ERROR_DOESNT_MATCH_SCHEMA, ERROR_INVALID_SCOPE, ERROR_UNKNOWN_LSIG, ScopeType, StdSigData } from "./arc60wallet.api"
+import { ARC31AuthRequest, ARC47LsigTemplateRequest, Arc60WalletApi, ERROR_DOESNT_MATCH_SCHEMA, ERROR_FAILED_DECODING, ERROR_INVALID_SCOPE, ERROR_INVALID_SIGNER, ERROR_UNKNOWN_LSIG, ScopeType, StdSigData } from "./arc60wallet.api"
 import { crypto_sign_verify_detached, ready } from "libsodium-wrappers-sumo"
+import * as msgpack from "algo-msgpack-with-bigint"
 
 jest.setTimeout(20000)
 
@@ -229,7 +230,19 @@ describe('ARC60 TEST SUITE', () => {
             }
 
             expect(arc60wallet.signData(signData, { scope: ScopeType.LSIG_TEMPLATE, encoding: 'base64' })).rejects.toThrow(ERROR_UNKNOWN_LSIG)
+        })
 
+        it('\(FAIL) Bad LSIG_TEMPLATE request, fails schema validation', async () => {
+            const lSigRequest = {}
+
+            const publicKey: Uint8Array = await Arc60WalletApi.getPublicKey(seed)
+
+            const signData: StdSigData = {
+                data: Buffer.from(JSON.stringify(lSigRequest)).toString('base64'),
+                signer: publicKey
+            }
+
+            expect(arc60wallet.signData(signData, { scope: ScopeType.LSIG_TEMPLATE, encoding: 'base64' })).rejects.toThrow(ERROR_DOESNT_MATCH_SCHEMA)
         })
 
         it('\(OK) Signs LSIG_TEMPLATE program, templated program is known, values replaced and signature produced', async () => {
@@ -272,6 +285,84 @@ describe('ARC60 TEST SUITE', () => {
             const signature: Uint8Array = await arc60wallet.signData(signData, { scope: ScopeType.LSIG_TEMPLATE, encoding: 'base64' })
             // expect signature to be hex
             expect(Buffer.from(signature).toString('hex')).toEqual("15ebdae08194f8d6ab64067be536f8f7538acda23474426a157433d09076f22a9211e956ff7473af40d5392285589be26c370c636e873a570d9316bd4bb74706")
+        })
+    })
+
+    // ARC31 auth group
+    describe('ARC31 AUTH', () => {
+        it('(OK) Sign ARC31 message', async () => {
+            const arc31Message: ARC31AuthRequest = {
+                authAcc: "Y76M3MSY6DKBRHBL7C3NNDXGS5IIMQVQVUAB6MP4XEMMGVF2QWNPL226CA",
+                domain: "arc31.io",
+                nonce: "1234567890",
+                desc: "This is a sample description",
+                meta: "This is a sample meta"
+            }
+
+            // signData
+            const publicKey: Uint8Array = await Arc60WalletApi.getPublicKey(seed)
+
+            const signData: StdSigData = {
+                data: Buffer.from(JSON.stringify(arc31Message)).toString('base64'),
+                signer: publicKey
+            }
+
+            const signature: Uint8Array = await arc60wallet.signData(signData, { scope: ScopeType.ARC31, encoding: 'base64' })
+            
+            // verify
+
+            // msgpack encode request
+            const encoded: Uint8Array = msgpack.encode(arc31Message, { sortKeys: true, ignoreUndefined: true })
+
+            // verify signature 
+            await ready //libsodium
+            expect(crypto_sign_verify_detached(signature, encoded, publicKey)).toBeTruthy()
+        })
+
+        it('(FAILS) Tries to sign ARC31 with bad schema', async () => {
+            const arc31Message = {
+                authAcc: "Y76M3MSY6DKBRHBL7C3NNDXGS5IIMQVQVUAB6MP4XEMMGVF2QWNPL226CA",
+                domain: "arc31.io",
+            }
+
+            // signData
+            const publicKey: Uint8Array = await Arc60WalletApi.getPublicKey(seed)
+
+            const signData: StdSigData = {
+                data: Buffer.from(JSON.stringify(arc31Message)).toString('hex'),
+                signer: publicKey
+            }
+
+            expect(arc60wallet.signData(signData, { scope: ScopeType.ARC31, encoding: 'hex' })).rejects.toThrow(ERROR_DOESNT_MATCH_SCHEMA)
+        })
+    })
+
+    // bad signer
+    describe('Invalid or Unkown Signer', () => {
+        it('(FAILS) Tries to sign with bad signer', async () => {
+            const challenge: Uint8Array = new Uint8Array(randomBytes(32))
+
+            const signData: StdSigData = {
+                data: Buffer.from(challenge).toString('base64'),
+                signer: new Uint8Array(31) // Bad signer
+            }
+
+            expect(arc60wallet.signData(signData, { scope: ScopeType.CHALLENGE32, encoding: 'base64' })).rejects.toThrow(ERROR_INVALID_SIGNER)
+        })
+    })
+
+    // unkown encoding
+    describe('Unknown Encoding', () => {
+        it('(FAILS) Tries to sign with unknown encoding', async () => {
+            const challenge: Uint8Array = new Uint8Array(randomBytes(32))
+            const publicKey: Uint8Array = await Arc60WalletApi.getPublicKey(seed)
+
+            const signData: StdSigData = {
+                data: Buffer.from(challenge).toString('base64'),
+                signer: publicKey
+            }
+
+            expect(arc60wallet.signData(signData, { scope: ScopeType.CHALLENGE32, encoding: 'unknown' })).rejects.toThrow(ERROR_FAILED_DECODING)
         })
     })
 })
