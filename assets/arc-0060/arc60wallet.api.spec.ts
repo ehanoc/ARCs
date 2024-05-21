@@ -162,6 +162,26 @@ describe('ARC60 TEST SUITE', () => {
             expect(crypto_sign_verify_detached(signature, mxRandomData, publicKey)).toBeTruthy()
         })
 
+        it('\(OK) Signs 512 bytes random data with MX prefix', async () => {
+            // random data with MX prefix
+            const mxValue: Uint8Array = new Uint8Array([0x6d, 0x78])
+            const mxRandomData: Buffer = Buffer.concat([mxValue, new Uint8Array(randomBytes(512))])
+
+            const publicKey: Uint8Array = await Arc60WalletApi.getPublicKey(seed)
+
+            const signData: StdSigData = {
+                data: mxRandomData.toString('base64'),
+                signer: publicKey
+            }
+
+            const signature: Uint8Array = await arc60wallet.signData(signData, { scope: ScopeType.MX_RANDOM, encoding: 'base64' })
+            expect(signature).toBeDefined()
+
+            // verify signature 
+            await ready //libsodium
+            expect(crypto_sign_verify_detached(signature, mxRandomData, publicKey)).toBeTruthy()
+        })
+
         it('\(FAILS) Tries to sign but no MX prefix is present', async () => {
             const mxRandomData: Buffer = randomBytes(66)
             const publicKey: Uint8Array = await Arc60WalletApi.getPublicKey(seed)
