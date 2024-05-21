@@ -156,6 +156,7 @@ describe('Test Suite Name', () => {
         })
 
         it('\(OK) Signs LSIG_TEMPLATE program, templated program is known, values replaced and signature produced', async () => {
+            // ARC47 template + values
             const lSigRequest = {
                 LogicSignatureDescription: {
                     name: "Sample LSig",

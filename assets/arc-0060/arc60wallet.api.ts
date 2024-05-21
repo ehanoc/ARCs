@@ -11,7 +11,7 @@ import * as crypto from 'crypto'
 import { readFileSync } from 'fs';
 import path from 'path';
 import Ajv, { JSONSchemaType } from 'ajv';
-import sha512 from 'js-sha512'
+import sha512, { sha512_256 } from 'js-sha512'
 import axios, { AxiosResponse } from 'axios'
 import * as util from 'util'
 
@@ -93,7 +93,7 @@ export class Arc60WalletApi {
      * Known LSIG template hashes. 
      */
     static known_lsigs_template_hashes: string[] = [
-        "866b786c4c36c22a9f2aab6bc51bdbfc81d2a645a5a1839f62b76f626f5fc9fe"
+        "501bfa4c62e5282b447ae0b35ed1ba24544a74bfee948701744bbc46d8a36464"
     ]
 
     /**
@@ -167,7 +167,7 @@ export class Arc60WalletApi {
             case ScopeType.LSIG_TEMPLATE:
                 // LSIG schema validation
                 // Wallets should load the LSIG Schema from their local storage at run-time. 
-                const file_contents = readFileSync(path.resolve(__dirname, 'lsig-schema.json'), 'utf8');
+                const file_contents = readFileSync(path.resolve(__dirname, 'lsig-template-request.json'), 'utf8');
 
                 const lsigSchema: JSONSchemaType<any> = JSON.parse(file_contents)
                 
@@ -183,19 +183,21 @@ export class Arc60WalletApi {
                     throw ERROR_DOESNT_MATCH_SCHEMA;
                 }
 
-                // const decodedProgram = Buffer.from(lsigData.program, 'base64')
-                const program: Uint8Array = new Uint8Array(Buffer.from(lsigData.program, 'base64'))
-
-                // hash of template
-                const hexProgramHash: string = sha512.sha512_256.update(program).hex()
-
-                // check if computed hash is equal to the hash in the request
-                if(hexProgramHash !== lsigData.hash) {
-                    throw ERROR_UNKNOWN_LSIG;
+                // hash lsig template request by excluding values
+                const lSigRequestNoValues = {
+                    LogicSignatureDescription: {
+                        ...lsigData.LogicSignatureDescription,
+                        values: undefined
+                    },
+                    program: lsigData.program,
+                    hash: lsigData.hash
                 }
 
+                // hash lsig template request by excluding values
+                const hashTemplate: string = sha512_256.update(JSON.stringify(lSigRequestNoValues)).hex()
+
                 // check if hash is one of the known hashes
-                if(!Arc60WalletApi.known_lsigs_template_hashes.includes(hexProgramHash)) {
+                if(!Arc60WalletApi.known_lsigs_template_hashes.includes(hashTemplate)) {
                     throw ERROR_UNKNOWN_LSIG;
                 }
 
