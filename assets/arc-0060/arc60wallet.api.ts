@@ -15,6 +15,24 @@ import sha512, { sha512_256 } from 'js-sha512'
 import axios, { AxiosResponse } from 'axios'
 import * as util from 'util'
 
+export interface ARC47LsigTemplateRequest {
+    LogicSignatureDescription: {  // sha512_256 hash of this object is the template hash
+        name: string,
+        description: string,
+        program: string, // base64 encoded TEAL program
+        hash: string, // hash of the program, AFTER values replaced and compiled
+        variables: Array<{
+            variable: string,
+            name: string,
+            type: string,
+            description: string
+        }>
+    },
+    values: { // to replace on the program
+        [key: string]: any
+    }
+}
+
 export interface HDWalletMetadata {
     /**
     * HD Wallet purpose value. First derivation path level. 
@@ -93,7 +111,7 @@ export class Arc60WalletApi {
      * Known LSIG template hashes. 
      */
     static known_lsigs_template_hashes: string[] = [
-        "501bfa4c62e5282b447ae0b35ed1ba24544a74bfee948701744bbc46d8a36464"
+        "1c01fbf5f82213abe542717387d982c3e8332f45d78d6b7ce40b31bb802f1778"
     ]
 
     /**
@@ -172,7 +190,7 @@ export class Arc60WalletApi {
                 const lsigSchema: JSONSchemaType<any> = JSON.parse(file_contents)
                 
                 const ajv = new Ajv();
-                const validate = ajv.compile(lsigSchema);
+                const validate = ajv.compile(lsigSchema)
 
                 const lsigData = JSON.parse(decodedData.toString());
 
@@ -184,17 +202,7 @@ export class Arc60WalletApi {
                 }
 
                 // hash lsig template request by excluding values
-                const lSigRequestNoValues = {
-                    LogicSignatureDescription: {
-                        ...lsigData.LogicSignatureDescription,
-                        values: undefined
-                    },
-                    program: lsigData.program,
-                    hash: lsigData.hash
-                }
-
-                // hash lsig template request by excluding values
-                const hashTemplate: string = sha512_256.update(JSON.stringify(lSigRequestNoValues)).hex()
+                const hashTemplate: string = sha512_256.update(JSON.stringify(lsigData.LogicSignatureDescription)).hex()
 
                 // check if hash is one of the known hashes
                 if(!Arc60WalletApi.known_lsigs_template_hashes.includes(hashTemplate)) {
@@ -202,10 +210,10 @@ export class Arc60WalletApi {
                 }
 
                 // replaces values
-                let finalTeal = atob(lsigData.program)
+                let finalTeal = atob(lsigData.LogicSignatureDescription.program)
 
                 // get values
-                const values = lsigData.LogicSignatureDescription.values
+                const values = lsigData.values
     
                 // get keys
                 const keys = Object.keys(values)
