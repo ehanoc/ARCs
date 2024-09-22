@@ -16,23 +16,39 @@ $ yarn test
 
 ```bash
  PASS  ./arc60wallet.api.spec.ts
-  Test Suite Name
-    Reject unknown LSIGs
-      ✓ (FAILS) Tries to sign with any scope if "Program" is present (34 ms)
-    SCOPE == CHALLENGE32
-      ✓ (OK) Signs random 32 byte challenge (3 ms)
-      ✓ (FAILS) Tries to sign with bad size random data as CHALLENGE32 (1 ms)
-    SCOPE == MX_RANDOM
-      ✓ (OK) Signs random 32 byte challenge with MX prefix (2 ms)
-      ✓ (FAILS) Tries to sign but no MX prefix is present (1 ms)
+  ARC60 TEST SUITE
+    rawSign
+      ✓ (OK) should sign data correctly (22 ms)
+      ✓ (FAILS) should throw error for shorter incorrect length seed (1 ms)
+      ✓ (FAILS) should throw error for longer incorrect length seed (1 ms)
+    getPublicKey
+      ✓ (OK) should return the correct public key
+      ✓ (FAILS) should throw error for shorter incorrect length seed
+      ✓ (FAILS) should throw error for longer incorrect length seed (1 ms)
     SCOPE == INVALID
-      ✓ (FAILS) Tries to sign with invalid scope (1 ms)
-    SCOPE == LSIG_TEMPLATE
-      ✓ (FAIL) Fails to sign LSIG_TEMPLATE program, templated program doesnt match known hashes (74 ms)
-      ✓ (OK) Signs LSIG_TEMPLATE program, templated program is known, values replaced and signature produced (1026 ms)
+      ✓ (FAILS) Tries to sign with invalid scope (18 ms)
+    AUTH sign request
+      ✓ (OK) Signing AUTH requests (3 ms)
+      ✓ (FAILS) Tries to sign with bad json (2 ms)
+      ✓ (FAILS) Tries to sign with bad json schema (1 ms)
+      ✓ (FAILS) Is missing domain (1 ms)
+      ✓ (FAILS) Is missing authenticationData (1 ms)
+    Invalid or Unkown Signer
+      ✓ (FAILS) Tries to sign with bad signer (1 ms)
+    Unknown Encoding
+      ✓ (FAILS) Tries to sign with unknown encoding (1 ms)
 
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |     100 |      100 |     100 |     100 |                   
+ ...0wallet.api.ts |     100 |      100 |     100 |     100 |                   
+-------------------|---------|----------|---------|---------|-------------------
 Test Suites: 1 passed, 1 total
-Tests:       8 passed, 8 total
+Tests:       14 passed, 14 total
 Snapshots:   0 total
-Time:        3.001 s, estimated 4 s
+Time:        2.568 s, estimated 3 s
+Ran all test suites.
+Done in 3.08s.
+
 ```
