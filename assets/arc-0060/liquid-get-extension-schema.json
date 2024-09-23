@@ -1,0 +1,13 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://arcs/60/liquid-get-extension",
+    "title": "Liquid Auth Webauthn Get Extension",
+    "type": "object",
+    "properties": {
+        "requestId": {
+            "type": "string",
+            "description": "Optional, requestId is used to authenticate a remote peer"
+        }
+    },
+    "additionalProperties": false
+}

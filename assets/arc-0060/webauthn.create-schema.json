@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Webauthn Create",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Base64 URL encoded credential ID, should always remain encoded"
+    },
+    "type": {
+      "type": "string",
+      "description": "Type of credential",
+      "const": "public-key"
+    },
+    "rawId": {
+      "type": "string",
+      "description": "Base64 URL encoded credential ID, should be decoded by both parties"
+    },
+    "clientExtensionResults": {
+      "type": "object",
+      "properties": {
+        "liquid": {
+          "$ref:": "http://arcs/60/liquid-create-extension"
+        }
+      }
+    },
+    "response": {
+      "type": "object",
+      "properties": {
+        "clientDataJSON": {
+          "type": "string",
+          "description": "Client Data encoded as Base64 URL"
+        },
+        "attestationObject": {
+          "type": "string",
+          "description": "Base64 URL Attestation object from the Authenticator"
+        },
+        "signature": {
+          "type": "string",
+          "description": "Bas64 URL signature of the data and authenticator"
+        }
+      },
+      "required": ["clientDataJSON", "attestationObject"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["id", "type", "rawId", "response"],
+  "additionalProperties": false
+}
