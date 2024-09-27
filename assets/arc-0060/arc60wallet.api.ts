@@ -8,7 +8,46 @@ import {
 } from 'libsodium-wrappers-sumo'
 
 import * as crypto from 'crypto'
-import exp from 'constants';
+
+/**
+ * Helper types
+ */
+export interface CAIP122 {
+    domain: string; //RFC 4501 dnsauthority that is requesting the signing.
+    account_address: string; //	Blockchain address performing the signing, expressed as the account_address segment of a CAIP-10 address; should NOT include CAIP-2 chain_id.
+    uri: string; // RFC 3986 URI referring to the resource that is the subject of the signing i.e. the subject of the claim.
+    version: string; //Current version of the message.
+    statement?: string; // 	Human-readable ASCII assertion that the user will sign. It MUST NOT contain \n.
+    nonce?: string; // Randomized token to prevent signature replay attacks.
+    "issued-at"?: string; // 	RFC 3339 date-time that indicates the issuance time.
+    "expiration-time"?: string; // RFC 3339 date-time that indicates when the signed authentication message is no longer valid.
+    "not-before"?: string; // RFC 3339 date-time that indicates when the signed authentication message becomes valid.
+    "request-id"?: string; // Unique identifier for the request.
+    chain_id: string; // CAIP-2 chain_id of the blockchain where the account_address is valid.
+    resources?: string[]; // 	List of information or references to information the user wishes to have resolved as part of the authentication by the relying party; express as RFC 3986 URIs and separated by \n.
+    signature?: Uint8Array; // 	signature of the message. 
+    type: string; // Type of the signature to be generated, as defined in the namespaces for this CAIP.
+}
+
+
+/**
+type: Always set to "webauthn.create" for registration or "webauthn.authenticate" for authentication.
+origin: The origin of the request, typically a URL.
+challenge: A base64url-encoded challenge string.
+rpId: The identifier of the Relying Party (RP).
+userId: Optional user ID.
+extensions: An object containing extension-defined data, if any. Extension identifiers are used as keys, and the corresponding values are the extension-defined data.
+
+ */
+export interface FIDO2ClientData {
+    type?: string;
+    origin: string;
+    challenge: string;
+    rpId?: string;
+    userId?: string;
+    extensions?: any
+}
+
 
 export interface HDWalletMetadata {
     /**
